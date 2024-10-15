@@ -15,35 +15,89 @@ jobs:
           MYSQL_ROOT_PASSWORD: 'AgueroAguero123!'
           MYSQL_DATABASE: 'book_author_db'
         options: >-
-          --health-cmd 'mysqladmin ping --silent'
+          --health-cmd "mysqladmin ping --silent"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 3
 
-  steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Set up Java
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: maven
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
 
-    - name: Wait for MySQL to be ready
-      run: |
-        for i in {30..0}; do
-          if mysqladmin ping -h127.0.0.1 -uroot -p'AgueroAguero123!' --silent; then
-            break
+      - name: Wait for MySQL to be ready
+        run: |
+          for i in {30..0}; do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p'AgueroAguero123!' --silent; then
+              break
+            fi
+            echo 'MySQL init process in progress...'
+            sleep 1
+          done
+          if [ "$i" = 0 ]; then
+            echo >&2 'MySQL init process failed.'
+            exit 1
           fi
-          echo 'MySQL init process in progress...'
-          sleep 1
-        done
-        if [ "$i" = 0 ]; then
-          echo >&2 'MySQL init process failed.'
-          exit 1
-        fi
 
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml
+
+  publish-job:
+    runs-on: ubuntu-latest
+    needs: build
+
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ROOT_PASSWORD: 'AgueroAguero123!'
+          MYSQL_DATABASE: 'book_author_db'
+        options: >-
+          --health-cmd "mysqladmin ping --silent"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Wait for MySQL to be ready
+        run: |
+          for i in {30..0}; do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -u root -p'AgueroAguero123!' --silent; then
+              break
+            fi
+            echo 'MySQL init process in progress...'
+            sleep 1
+          done
+          if [ "$i" = 0 ]; then
+            echo >&2 'MySQL init process failed.'
+            exit 1
+          fi
+
+      - name: Build and Test
+        run: mvn --batch-mode --update-snapshots verify
+
+      - name: Prepare Artifact
+        run: mkdir staging && cp target/*.jar staging
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Package
+          path: staging
