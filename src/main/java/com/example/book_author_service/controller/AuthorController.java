@@ -4,7 +4,6 @@ import com.example.book_author_service.model.Author;
 import com.example.book_author_service.service.AuthorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
@@ -33,7 +32,7 @@ public class AuthorController {
     @PostMapping
     public ResponseEntity<Author> createAuthor(@RequestBody Author author) {
         Author createdAuthor = authorService.createAuthor(author);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdAuthor);
+        return ResponseEntity.status(201).body(createdAuthor);
     }
 
     @PutMapping("/{id}")

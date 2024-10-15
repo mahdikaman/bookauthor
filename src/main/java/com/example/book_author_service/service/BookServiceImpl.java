@@ -31,17 +31,14 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public Book createBook(Book book) {
-        // Kontrollera om författaren finns
         if (book.getAuthor() != null && book.getAuthor().getId() != null) {
             Optional<Author> authorOptional = authorRepository.findById(book.getAuthor().getId());
             if (authorOptional.isPresent()) {
                 book.setAuthor(authorOptional.get());
             } else {
-                // Hantera om författaren inte finns
                 throw new RuntimeException("Author not found with id: " + book.getAuthor().getId());
             }
         } else {
-            // Hantera om ingen författare är satt
             throw new RuntimeException("Author information is required");
         }
         return bookRepository.save(book);
@@ -54,7 +51,6 @@ public class BookServiceImpl implements BookService {
             Book existingBook = existingBookOptional.get();
             existingBook.setTitle(book.getTitle());
 
-            // Uppdatera författaren om nödvändigt
             if (book.getAuthor() != null && book.getAuthor().getId() != null) {
                 Optional<Author> authorOptional = authorRepository.findById(book.getAuthor().getId());
                 if (authorOptional.isPresent()) {

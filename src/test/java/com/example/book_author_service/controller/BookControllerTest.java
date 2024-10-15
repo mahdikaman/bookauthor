@@ -3,31 +3,27 @@ package com.example.book_author_service.controller;
 import com.example.book_author_service.model.Author;
 import com.example.book_author_service.model.Book;
 import com.example.book_author_service.service.BookService;
-import com.example.book_author_service.service.AuthorService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.Arrays;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.times;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 public class BookControllerTest {
 
@@ -36,18 +32,28 @@ public class BookControllerTest {
     @Mock
     private BookService bookService;
 
-    @Mock
-    private AuthorService authorService;
-
     @InjectMocks
     private BookController bookController;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        mockMvc = MockMvcBuilders.standaloneSetup(bookController).build();
+
+        // Configure the ObjectMapper to match your application's configuration
+        objectMapper = new ObjectMapper();
+        objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+
+        // Register any necessary modules
+        // objectMapper.registerModule(new Hibernate5Module());
+
+        // Set up MockMvc with the custom ObjectMapper
+        MappingJackson2HttpMessageConverter messageConverter = new MappingJackson2HttpMessageConverter(objectMapper);
+        mockMvc = MockMvcBuilders.standaloneSetup(bookController)
+                .setMessageConverters(messageConverter)
+                .build();
     }
 
     @Test
@@ -72,7 +78,11 @@ public class BookControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].title").value("Book One"))
-                .andExpect(jsonPath("$[1].title").value("Book Two"));
+                .andExpect(jsonPath("$[0].author.id").value(1))
+                .andExpect(jsonPath("$[0].author.name").value("Author Name"))
+                .andExpect(jsonPath("$[1].title").value("Book Two"))
+                .andExpect(jsonPath("$[1].author.id").value(1))
+                .andExpect(jsonPath("$[1].author.name").value("Author Name"));
     }
 
     @Test
@@ -90,9 +100,9 @@ public class BookControllerTest {
 
         mockMvc.perform(get("/api/books/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.title").value("Test Book"))
-                .andExpect(jsonPath("$.author.id").value(1L))
+                .andExpect(jsonPath("$.author.id").value(1))
                 .andExpect(jsonPath("$.author.name").value("Author Name"));
     }
 
@@ -117,9 +127,9 @@ public class BookControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(book)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1L))
+                .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.title").value("New Book"))
-                .andExpect(jsonPath("$.author.id").value(1L))
+                .andExpect(jsonPath("$.author.id").value(1))
                 .andExpect(jsonPath("$.author.name").value("Author Name"));
     }
 
@@ -127,6 +137,7 @@ public class BookControllerTest {
     void testUpdateBook() throws Exception {
         Author author = new Author();
         author.setId(1L);
+        author.setName("Author Name");
 
         Book book = new Book();
         book.setTitle("Updated Book");
@@ -143,8 +154,10 @@ public class BookControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(book)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1L))
-                .andExpect(jsonPath("$.title").value("Updated Book"));
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.title").value("Updated Book"))
+                .andExpect(jsonPath("$.author.id").value(1))
+                .andExpect(jsonPath("$.author.name").value("Author Name"));
     }
 
     @Test
