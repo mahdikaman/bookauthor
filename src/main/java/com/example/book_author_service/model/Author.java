@@ -2,9 +2,9 @@ package com.example.book_author_service.model;
 
 import javax.persistence.*;
 import java.util.Set;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
+@Table(name = "authors")
 public class Author {
 
     @Id
@@ -14,7 +14,6 @@ public class Author {
     private String name;
 
     @OneToMany(mappedBy = "author", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
     private Set<Book> books;
 
     public Author() {}

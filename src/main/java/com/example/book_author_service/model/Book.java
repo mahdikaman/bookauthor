@@ -3,6 +3,7 @@ package com.example.book_author_service.model;
 import javax.persistence.*;
 
 @Entity
+@Table(name = "books")
 public class Book {
 
     @Id
@@ -11,7 +12,7 @@ public class Book {
 
     private String title;
 
-    @ManyToOne
+    @ManyToOne(optional = false)
     @JoinColumn(name = "author_id", nullable = false)
     private Author author;
 
