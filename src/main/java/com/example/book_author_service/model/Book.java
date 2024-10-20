@@ -18,7 +18,7 @@ public class Book {
 
     public Book() {}
 
-    // Getters and Setters
+
 
     public Long getId() {
         return id;

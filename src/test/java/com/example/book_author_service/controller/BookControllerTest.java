@@ -41,15 +41,12 @@ public class BookControllerTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
 
-        // Configure the ObjectMapper to match your application's configuration
+
         objectMapper = new ObjectMapper();
         objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         objectMapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 
-        // Register any necessary modules
-        // objectMapper.registerModule(new Hibernate5Module());
 
-        // Set up MockMvc with the custom ObjectMapper
         MappingJackson2HttpMessageConverter messageConverter = new MappingJackson2HttpMessageConverter(objectMapper);
         mockMvc = MockMvcBuilders.standaloneSetup(bookController)
                 .setMessageConverters(messageConverter)

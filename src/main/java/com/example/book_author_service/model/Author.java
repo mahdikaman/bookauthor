@@ -18,7 +18,7 @@ public class Author {
 
     public Author() {}
 
-    // Getters and Setters
+
 
     public Long getId() {
         return id;
